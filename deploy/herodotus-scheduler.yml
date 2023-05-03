@@ -86,7 +86,8 @@ spec:
       - command:
         - /usr/local/bin/kube-scheduler
         - --config=/etc/kubernetes/herodotus-scheduler/herodotus-scheduler-config.yaml
-        - --v=5
+        - --v=3
+        - --show-hidden-metrics-for-version=1.25
         image: ghcr.io/dsmaugy/kubernetes-herodotus/herodotus-scheduler:latest
         livenessProbe:
           httpGet:

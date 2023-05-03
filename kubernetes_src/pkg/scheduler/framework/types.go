@@ -927,3 +927,14 @@ func (h HostPortInfo) sanitize(ip, protocol *string) {
 		*protocol = string(v1.ProtocolTCP)
 	}
 }
+
+// Herodotus Scheduler info
+var HerodotusPodStatsKey = "kubernetes.io/herodotus-scheduler/"
+
+func GetHerodotusPodKey(pod *v1.Pod) string {
+	return HerodotusPodStatsKey + pod.Namespace + "/" + pod.Name
+}
+
+type HerodotusPodStats struct {
+	failedNodesToPlugin map[string][]string
+}

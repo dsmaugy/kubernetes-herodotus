@@ -189,6 +189,14 @@ var (
 			StabilityLevel: metrics.ALPHA,
 		}, []string{"plugin", "profile"})
 
+	NodeNormalizedScore = metrics.NewGaugeVec(
+		&metrics.GaugeOpts{
+			Subsystem:      SchedulerSubsystem,
+			Name:           "normalized_node_score_total",
+			Help:           "Total normalized score this node has accrued",
+			StabilityLevel: metrics.ALPHA,
+		}, []string{"node"})
+
 	metricsList = []metrics.Registerable{
 		scheduleAttempts,
 		e2eSchedulingLatency,
@@ -207,6 +215,7 @@ var (
 		PermitWaitDuration,
 		CacheSize,
 		unschedulableReasons,
+		NodeNormalizedScore,
 	}
 )
 

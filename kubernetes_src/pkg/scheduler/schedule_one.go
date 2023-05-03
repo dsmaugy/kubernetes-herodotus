@@ -88,6 +88,7 @@ func (sched *Scheduler) scheduleOne(ctx context.Context) {
 	// Initialize an empty podsToActivate struct, which will be filled up by plugins or stay empty.
 	podsToActivate := framework.NewPodsToActivate()
 	state.Write(framework.PodsToActivateKey, podsToActivate)
+	klog.V(3).Infof("Herodotus Key Name: %s", framework.GetHerodotusPodKey(pod))
 
 	schedulingCycleCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -666,6 +667,12 @@ func prioritizeNodes(
 	nodesScores, scoreStatus := fwk.RunScorePlugins(ctx, state, pod, nodes)
 	if !scoreStatus.IsSuccess() {
 		return nil, scoreStatus.AsError()
+	}
+
+	// log scores into Herodotus
+	for _, nodeScore := range nodesScores {
+		klog.V(3).Infof("Setting metrics for node %s", nodeScore.Name)
+		metrics.NodeNormalizedScore.WithLabelValues(nodeScore.Name).Set(float64(nodeScore.TotalScore))
 	}
 
 	// Additional details logged at level 10 if enabled.

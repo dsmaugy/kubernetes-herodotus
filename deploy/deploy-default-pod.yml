@@ -8,5 +8,5 @@ metadata:
 spec:
   schedulerName: herodotus-scheduler
   containers:
-  - name: pod-with-default-annotation-container
+  - name: test-pod
     image: registry.k8s.io/pause:2.0
