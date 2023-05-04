@@ -929,12 +929,37 @@ func (h HostPortInfo) sanitize(ip, protocol *string) {
 }
 
 // Herodotus Scheduler info
+
+type NodeStatus int
+
 var HerodotusPodStatsKey = "kubernetes.io/herodotus-scheduler/"
+
+const (
+	NODE_FAILED NodeStatus = iota
+	NODE_PASS
+	NODE_SKIPPED
+)
 
 func GetHerodotusPodKey(pod *v1.Pod) string {
 	return HerodotusPodStatsKey + pod.Namespace + "/" + pod.Name
 }
 
 type HerodotusPodStats struct {
-	failedNodesToPlugin map[string][]string
+	nodeFilterStatus map[string]map[string]NodeStatus // map node to plugin to status
+}
+
+func (s *HerodotusPodStats) Clone() StateData {
+	return s
+}
+
+func NewHerodotusPodStats(nodeNames []string) *HerodotusPodStats {
+	stat := &HerodotusPodStats{
+		nodeFilterStatus: make(map[string]map[string]NodeStatus),
+	}
+
+	for _, nodeName := range nodeNames {
+		stat.nodeFilterStatus[nodeName] = make(map[string]NodeStatus)
+	}
+
+	return stat
 }

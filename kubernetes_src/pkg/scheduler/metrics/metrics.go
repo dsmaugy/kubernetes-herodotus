@@ -189,13 +189,37 @@ var (
 			StabilityLevel: metrics.ALPHA,
 		}, []string{"plugin", "profile"})
 
-	NodeNormalizedScore = metrics.NewGaugeVec(
+	NodeNormalizedScoreTotal = metrics.NewGaugeVec(
 		&metrics.GaugeOpts{
 			Subsystem:      SchedulerSubsystem,
 			Name:           "normalized_node_score_total",
 			Help:           "Total normalized score this node has accrued",
 			StabilityLevel: metrics.ALPHA,
 		}, []string{"node"})
+
+	NodeNormalizedScore = metrics.NewGaugeVec(
+		&metrics.GaugeOpts{
+			Subsystem:      SchedulerSubsystem,
+			Name:           "normalized_node_score_for_pod",
+			Help:           "Normalized score that the specified scoring filter gave to this pod for that node",
+			StabilityLevel: metrics.ALPHA,
+		}, []string{"node", "pod", "plugin"})
+
+	NodeScoreAttempts = metrics.NewGaugeVec(
+		&metrics.GaugeOpts{
+			Subsystem:      SchedulerSubsystem,
+			Name:           "node_score_attempts",
+			Help:           "Total amount of times the node has been scored",
+			StabilityLevel: metrics.ALPHA,
+		}, []string{"node"})
+
+	NodeFilterStatus = metrics.NewGaugeVec(
+		&metrics.GaugeOpts{
+			Subsystem:      SchedulerSubsystem,
+			Name:           "node_filter_status",
+			Help:           "The filter plugin status for each pod for each node",
+			StabilityLevel: metrics.ALPHA,
+		}, []string{"node", "pod", "plugin"})
 
 	metricsList = []metrics.Registerable{
 		scheduleAttempts,
@@ -215,7 +239,9 @@ var (
 		PermitWaitDuration,
 		CacheSize,
 		unschedulableReasons,
-		NodeNormalizedScore,
+		NodeNormalizedScoreTotal,
+		NodeScoreAttempts,
+		NodeFilterStatus,
 	}
 )
 

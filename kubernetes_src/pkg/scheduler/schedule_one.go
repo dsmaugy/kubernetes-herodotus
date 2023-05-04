@@ -440,6 +440,7 @@ func (sched *Scheduler) findNodesThatFitPod(ctx context.Context, fwk framework.F
 			nodes = append(nodes, nInfo)
 		}
 	}
+
 	feasibleNodes, err := sched.findNodesThatPassFilters(ctx, fwk, state, pod, diagnosis, nodes)
 	// always try to update the sched.nextStartNodeIndex regardless of whether an error has occurred
 	// this is helpful to make sure that all the nodes have a chance to be searched
@@ -672,7 +673,11 @@ func prioritizeNodes(
 	// log scores into Herodotus
 	for _, nodeScore := range nodesScores {
 		klog.V(3).Infof("Setting metrics for node %s", nodeScore.Name)
-		metrics.NodeNormalizedScore.WithLabelValues(nodeScore.Name).Set(float64(nodeScore.TotalScore))
+		for _, pluginScore := range nodeScore.Scores {
+			metrics.NodeNormalizedScore.WithLabelValues(nodeScore.Name, framework.GetHerodotusPodKey(pod), pluginScore.Name).Set(float64(pluginScore.Score))
+		}
+		metrics.NodeNormalizedScoreTotal.WithLabelValues(nodeScore.Name).Set(float64(nodeScore.TotalScore))
+		metrics.NodeScoreAttempts.WithLabelValues(nodeScore.Name).Inc()
 	}
 
 	// Additional details logged at level 10 if enabled.
