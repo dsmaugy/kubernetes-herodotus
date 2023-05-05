@@ -74,6 +74,7 @@ spec:
     protocol: TCP
   selector:
     component: scheduler
+    app: scheduler-binary
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -93,6 +94,7 @@ spec:
     metadata:
       labels:
         component: scheduler
+        app: scheduler-binary
         tier: control-plane
         version: second
     spec:
@@ -130,3 +132,28 @@ spec:
         - name: config-volume
           configMap:
             name: herodotus-scheduler-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: herodotus-endpoint
+  namespace: kube-system
+  labels:
+    component: scheduler
+    app: scheduler-endpoint
+    tier: control-plane
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: scheduler
+      app: scheduler-endpoint
+  template:
+    metadata:
+      labels:
+        component: scheduler
+        app: scheduler-endpoint
+    spec:
+      containers:
+        - name: scheduler-endpoint-server
+          image: ghcr.io/dsmaugy/kubernetes-herodotus/herodotus-endpoint:latest

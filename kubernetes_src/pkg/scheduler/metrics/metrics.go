@@ -205,8 +205,8 @@ var (
 			StabilityLevel: metrics.ALPHA,
 		}, []string{"node", "pod", "plugin"})
 
-	NodeScoreAttempts = metrics.NewGaugeVec(
-		&metrics.GaugeOpts{
+	NodeScoreAttempts = metrics.NewCounterVec(
+		&metrics.CounterOpts{
 			Subsystem:      SchedulerSubsystem,
 			Name:           "node_score_attempts",
 			Help:           "Total amount of times the node has been scored",
@@ -220,6 +220,22 @@ var (
 			Help:           "The filter plugin status for each pod for each node",
 			StabilityLevel: metrics.ALPHA,
 		}, []string{"node", "pod", "plugin"})
+
+	NodeFilterPasses = metrics.NewCounterVec(
+		&metrics.CounterOpts{
+			Subsystem:      SchedulerSubsystem,
+			Name:           "node_filter_pass",
+			Help:           "The number of times a filter has passed for a node",
+			StabilityLevel: metrics.ALPHA,
+		}, []string{"node", "plugin"})
+
+	NodeFilterAttempts = metrics.NewCounterVec(
+		&metrics.CounterOpts{
+			Subsystem:      SchedulerSubsystem,
+			Name:           "node_filter_attempts",
+			Help:           "The total number of times a filter has run on a node",
+			StabilityLevel: metrics.ALPHA,
+		}, []string{"node", "plugin"})
 
 	metricsList = []metrics.Registerable{
 		scheduleAttempts,
@@ -243,6 +259,8 @@ var (
 		NodeNormalizedScoreTotal,
 		NodeScoreAttempts,
 		NodeFilterStatus,
+		NodeFilterPasses,
+		NodeFilterAttempts,
 	}
 )
 

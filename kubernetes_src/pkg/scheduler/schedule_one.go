@@ -552,7 +552,15 @@ func (sched *Scheduler) findNodesThatPassFilters(
 	for _, node := range nodes {
 		for _, pluginName := range heroPodStats.GetAllFilterNames() {
 			klog.V(3).Infof("Setting schedule pluging metric for node %s for plugin %s", node.Node().Name, pluginName)
-			metrics.NodeFilterStatus.WithLabelValues(node.Node().Name, string(framework.GetHerodotusPodKey(pod)), pluginName).Set(float64(heroPodStats.GetPluginStatusForNode(node.Node().Name, pluginName)))
+			pluginStatus := heroPodStats.GetPluginStatusForNode(node.Node().Name, pluginName)
+			metrics.NodeFilterStatus.WithLabelValues(node.Node().Name, string(framework.GetHerodotusPodKey(pod)), pluginName).Set(float64(pluginStatus))
+
+			if pluginStatus == framework.PLUGIN_FAILED || pluginStatus == framework.PLUGIN_PASSED {
+				metrics.NodeFilterAttempts.WithLabelValues(node.Node().Name, pluginName).Inc()
+				if pluginStatus == framework.PLUGIN_PASSED {
+					metrics.NodeFilterPasses.WithLabelValues(node.Node().Name, pluginName).Inc()
+				}
+			}
 		}
 	}
 
@@ -690,7 +698,7 @@ func prioritizeNodes(
 		for _, pluginScore := range nodeScore.Scores {
 			metrics.NodeNormalizedScore.WithLabelValues(nodeScore.Name, string(framework.GetHerodotusPodKey(pod)), pluginScore.Name).Set(float64(pluginScore.Score))
 		}
-		metrics.NodeNormalizedScoreTotal.WithLabelValues(nodeScore.Name).Set(float64(nodeScore.TotalScore))
+		metrics.NodeNormalizedScoreTotal.WithLabelValues(nodeScore.Name).Add(float64(nodeScore.TotalScore))
 		metrics.NodeScoreAttempts.WithLabelValues(nodeScore.Name).Inc()
 	}
 

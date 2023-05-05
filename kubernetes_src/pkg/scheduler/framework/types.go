@@ -936,7 +936,7 @@ var HerodotusPodStatsKey = "kubernetes.io/herodotus-scheduler/"
 
 const (
 	PLUGIN_FAILED PluginStatus = iota
-	PLUGIN_PASS
+	PLUGIN_PASSED
 	PLUGIN_SKIPPED
 )
 
@@ -955,7 +955,7 @@ func (s *HerodotusPodStats) Clone() StateData {
 func (s *HerodotusPodStats) SetPluginStatus(nodeName string, pluginName string, pluginPassed bool) {
 	var pluginStatus PluginStatus
 	if pluginPassed {
-		pluginStatus = PLUGIN_PASS
+		pluginStatus = PLUGIN_PASSED
 	} else {
 		pluginStatus = PLUGIN_FAILED
 	}
