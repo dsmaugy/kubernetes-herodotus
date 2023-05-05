@@ -239,6 +239,7 @@ var (
 		PermitWaitDuration,
 		CacheSize,
 		unschedulableReasons,
+		NodeNormalizedScore,
 		NodeNormalizedScoreTotal,
 		NodeScoreAttempts,
 		NodeFilterStatus,
