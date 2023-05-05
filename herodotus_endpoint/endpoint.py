@@ -35,7 +35,8 @@ def cli(options: argparse.Namespace):
         print(f"Error contacting scheduler: {r.text}", file=sys.stderr)
         exit(-1)
 
-    print(r.text)
+    if options.type == OPTION_NODE:
+        print(r.text)
 
     
 
