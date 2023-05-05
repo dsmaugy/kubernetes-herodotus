@@ -21,7 +21,7 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
     - name: Build scheduler binary image
       run: | 
-        docker build . --file Dockerfile --tag ghcr.io/dsmaugy/kubernetes-herodotus/herodotus-scheduler:latest
+        docker build . --tag ghcr.io/dsmaugy/kubernetes-herodotus/herodotus-scheduler:latest
     - name: Push scheduler binary image
       run: docker push ghcr.io/dsmaugy/kubernetes-herodotus/herodotus-scheduler:latest
     - name: Build scheduler endpoint image
