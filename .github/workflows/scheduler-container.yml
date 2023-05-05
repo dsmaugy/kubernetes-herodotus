@@ -19,8 +19,14 @@ jobs:
       working-directory: ./kubernetes_src
     - name: Login to container registry
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-    - name: Build Docker image
+    - name: Build scheduler binary image
       run: | 
         docker build . --file Dockerfile --tag ghcr.io/dsmaugy/kubernetes-herodotus/herodotus-scheduler:latest
-    - name: Push Docker image
+    - name: Push scheduler binary image
       run: docker push ghcr.io/dsmaugy/kubernetes-herodotus/herodotus-scheduler:latest
+    - name: Build scheduler endpoint image
+      run: |
+        docker build herodotus_endpoint/ --tag ghcr.io/dsmaugy/kubernetes-herodotus/herodotus-endpoint:latest
+    - name: Push scheduler endpoint image
+      run: docker push ghcr.io/dsmaugy/kubernetes-herodotus/herodotus-endpoint:latest
+

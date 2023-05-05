@@ -504,6 +504,11 @@ func (sched *Scheduler) findNodesThatPassFilters(
 	var feasibleNodesLen int32
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	// populate the Herodotus state data
+	heroPodStats := framework.NewHerodotusPodStats(nodes)
+	state.Write(framework.GetHerodotusPodKey(pod), heroPodStats)
+
 	checkNode := func(i int) {
 		// We check the nodes starting from where we left off in the previous scheduling cycle,
 		// this is to make sure all nodes have the same chance of being examined across pods.
@@ -542,6 +547,15 @@ func (sched *Scheduler) findNodesThatPassFilters(
 	// are found.
 	fwk.Parallelizer().Until(ctx, numAllNodes, checkNode, frameworkruntime.Filter)
 	feasibleNodes = feasibleNodes[:feasibleNodesLen]
+
+	// update Herodotus stats for all nodes for this pod
+	for _, node := range nodes {
+		for _, pluginName := range heroPodStats.GetAllFilterNames() {
+			klog.V(3).Infof("Setting schedule pluging metric for node %s for plugin %s", node.Node().Name, pluginName)
+			metrics.NodeFilterStatus.WithLabelValues(node.Node().Name, string(framework.GetHerodotusPodKey(pod)), pluginName).Set(float64(heroPodStats.GetPluginStatusForNode(node.Node().Name, pluginName)))
+		}
+	}
+
 	if err := errCh.ReceiveError(); err != nil {
 		statusCode = framework.Error
 		return feasibleNodes, err
@@ -674,7 +688,7 @@ func prioritizeNodes(
 	for _, nodeScore := range nodesScores {
 		klog.V(3).Infof("Setting metrics for node %s", nodeScore.Name)
 		for _, pluginScore := range nodeScore.Scores {
-			metrics.NodeNormalizedScore.WithLabelValues(nodeScore.Name, framework.GetHerodotusPodKey(pod), pluginScore.Name).Set(float64(pluginScore.Score))
+			metrics.NodeNormalizedScore.WithLabelValues(nodeScore.Name, string(framework.GetHerodotusPodKey(pod)), pluginScore.Name).Set(float64(pluginScore.Score))
 		}
 		metrics.NodeNormalizedScoreTotal.WithLabelValues(nodeScore.Name).Set(float64(nodeScore.TotalScore))
 		metrics.NodeScoreAttempts.WithLabelValues(nodeScore.Name).Inc()

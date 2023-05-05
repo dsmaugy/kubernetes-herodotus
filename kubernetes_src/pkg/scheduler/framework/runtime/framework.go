@@ -727,7 +727,27 @@ func (f *frameworkImpl) RunFilterPlugins(
 	pod *v1.Pod,
 	nodeInfo *framework.NodeInfo,
 ) framework.PluginToStatus {
+	var heroPodStats *framework.HerodotusPodStats
+
 	statuses := make(framework.PluginToStatus)
+	c, err := state.Read(framework.GetHerodotusPodKey(pod))
+	enableHerod := true
+
+	if err != nil {
+		enableHerod = false
+	}
+
+	if enableHerod {
+		heroPodStats, enableHerod = c.(*framework.HerodotusPodStats)
+
+		if enableHerod {
+			for _, pl := range f.filterPlugins {
+				klog.V(3).Infof("Creating skeleton filter plugin statuses for node %s for filter %s", nodeInfo.Node().Name, pl.Name())
+				heroPodStats.PopulateFilterNames(nodeInfo.Node().Name, pl.Name())
+			}
+		}
+	}
+
 	for _, pl := range f.filterPlugins {
 		pluginStatus := f.runFilterPlugin(ctx, pl, state, pod, nodeInfo)
 		if !pluginStatus.IsSuccess() {
@@ -736,8 +756,17 @@ func (f *frameworkImpl) RunFilterPlugins(
 				// Success or Unschedulable.
 				pluginStatus = framework.AsStatus(fmt.Errorf("running %q filter plugin: %w", pl.Name(), pluginStatus.AsError()))
 			}
+
+			if enableHerod {
+				heroPodStats.SetPluginStatus(nodeInfo.Node().Name, pl.Name(), false)
+			}
+
 			pluginStatus.SetFailedPlugin(pl.Name())
 			return map[string]*framework.Status{pl.Name(): pluginStatus}
+		}
+
+		if enableHerod {
+			heroPodStats.SetPluginStatus(nodeInfo.Node().Name, pl.Name(), true)
 		}
 	}
 

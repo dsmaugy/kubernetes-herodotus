@@ -60,6 +60,21 @@ data:
     leaderElection:
       leaderElect: false    
 ---
+# expose the scheduler on a service so we can run HTTP requests against the /metrics endpoint where our data lives
+apiVersion: v1
+kind: Service
+metadata:
+  name: herodotus-scheduler
+  namespace: kube-system
+  labels:
+    component: scheduler
+spec:
+  ports:
+  - port: 10259
+    protocol: TCP
+  selector:
+    component: scheduler
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:

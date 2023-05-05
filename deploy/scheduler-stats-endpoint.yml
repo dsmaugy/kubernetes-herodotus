@@ -1,0 +1,10 @@
+# TODO: make this a deployment, integrate as part of scheduler yaml file
+apiVersion: v1
+kind: Pod
+metadata:
+  name: herodotus-endpoint
+  namespace: kube-system
+spec:
+  containers:
+  - name: scheduler-endpoint-server
+    image: ghcr.io/dsmaugy/kubernetes-herodotus/herodotus-endpoint:latest

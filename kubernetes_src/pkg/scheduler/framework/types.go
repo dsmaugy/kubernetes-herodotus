@@ -930,35 +930,69 @@ func (h HostPortInfo) sanitize(ip, protocol *string) {
 
 // Herodotus Scheduler info
 
-type NodeStatus int
+type PluginStatus int
 
 var HerodotusPodStatsKey = "kubernetes.io/herodotus-scheduler/"
 
 const (
-	NODE_FAILED NodeStatus = iota
-	NODE_PASS
-	NODE_SKIPPED
+	PLUGIN_FAILED PluginStatus = iota
+	PLUGIN_PASS
+	PLUGIN_SKIPPED
 )
 
-func GetHerodotusPodKey(pod *v1.Pod) string {
-	return HerodotusPodStatsKey + pod.Namespace + "/" + pod.Name
+func GetHerodotusPodKey(pod *v1.Pod) StateKey {
+	return StateKey(HerodotusPodStatsKey + pod.Namespace + "/" + pod.Name)
 }
 
 type HerodotusPodStats struct {
-	nodeFilterStatus map[string]map[string]NodeStatus // map node to plugin to status
+	nodeFilterStatus map[string]map[string]PluginStatus // map node to plugin to status
 }
 
 func (s *HerodotusPodStats) Clone() StateData {
 	return s
 }
 
-func NewHerodotusPodStats(nodeNames []string) *HerodotusPodStats {
-	stat := &HerodotusPodStats{
-		nodeFilterStatus: make(map[string]map[string]NodeStatus),
+func (s *HerodotusPodStats) SetPluginStatus(nodeName string, pluginName string, pluginPassed bool) {
+	var pluginStatus PluginStatus
+	if pluginPassed {
+		pluginStatus = PLUGIN_PASS
+	} else {
+		pluginStatus = PLUGIN_FAILED
 	}
 
-	for _, nodeName := range nodeNames {
-		stat.nodeFilterStatus[nodeName] = make(map[string]NodeStatus)
+	s.nodeFilterStatus[nodeName][pluginName] = pluginStatus
+}
+
+func (s *HerodotusPodStats) PopulateFilterNames(nodeName string, filterName string) {
+	s.nodeFilterStatus[nodeName][filterName] = PLUGIN_SKIPPED // assume plugin is skipped until explicit FAIL/PASS is given
+}
+
+func (s *HerodotusPodStats) GetPluginStatusForNode(nodeName string, filterName string) PluginStatus {
+	return s.nodeFilterStatus[nodeName][filterName]
+}
+
+func (s *HerodotusPodStats) GetAllFilterNames() []string {
+	var filterNames []string
+	for _, filterMap := range s.nodeFilterStatus {
+		filterNames = make([]string, len(filterMap))
+		i := 0
+		for filterName, _ := range filterMap {
+			filterNames[i] = filterName
+			i++
+		}
+
+		break
+	}
+	return filterNames
+}
+
+func NewHerodotusPodStats(nodes []*NodeInfo) *HerodotusPodStats {
+	stat := &HerodotusPodStats{
+		nodeFilterStatus: make(map[string]map[string]PluginStatus),
+	}
+
+	for _, node := range nodes {
+		stat.nodeFilterStatus[node.Node().Name] = make(map[string]PluginStatus)
 	}
 
 	return stat
