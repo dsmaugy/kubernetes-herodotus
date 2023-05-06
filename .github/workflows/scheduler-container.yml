@@ -14,19 +14,19 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Build scheduler
+    - name: Build scheduler binary
       run: build/run.sh make kube-scheduler  
       working-directory: ./kubernetes_src
     - name: Login to container registry
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-    - name: Build scheduler binary image
+    - name: Build scheduler binary container
       run: | 
         docker build . --tag ghcr.io/dsmaugy/kubernetes-herodotus/herodotus-scheduler:latest
-    - name: Push scheduler binary image
+    - name: Push scheduler binary container
       run: docker push ghcr.io/dsmaugy/kubernetes-herodotus/herodotus-scheduler:latest
-    - name: Build scheduler endpoint image
+    - name: Build scheduler endpoint container
       run: |
         docker build herodotus_endpoint/ --tag ghcr.io/dsmaugy/kubernetes-herodotus/herodotus-endpoint:latest
-    - name: Push scheduler endpoint image
+    - name: Push scheduler endpoint container
       run: docker push ghcr.io/dsmaugy/kubernetes-herodotus/herodotus-endpoint:latest
 
