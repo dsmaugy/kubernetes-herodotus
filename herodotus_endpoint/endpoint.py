@@ -128,11 +128,14 @@ class HerodotusEndpoint(BaseHTTPRequestHandler):
             self._send_text("Empty name in query")
             return
         
-        r = requests.get(f"https://{sched_addr}:{sched_port}/metrics", verify=False)
+        try:
+            r = requests.get(f"https://{sched_addr}:{sched_port}/metrics", verify=False)
+        except Exception:
+            r = None
 
-        if not r.ok:
+        if r is None or not r.ok:
             self._send_header(500, "text/plain")
-            self._send_text(f"Error contacting scheduler: {r.text}")
+            self._send_text(f"Error contacting scheduler")
             return
 
         if parse.path.lower() == "/node":
