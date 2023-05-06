@@ -7,4 +7,4 @@ COPY endpoint.py /usr/local/bin/endpoint
 RUN ["chmod", "+x", "/usr/local/bin/endpoint"]
 RUN ["pip3", "install", "requests", "termcolor"]
 
-CMD ["tail", "-f", "/dev/null"]
+CMD ["endpoint"]

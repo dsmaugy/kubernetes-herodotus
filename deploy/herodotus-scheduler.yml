@@ -157,3 +157,20 @@ spec:
       containers:
         - name: scheduler-endpoint-server
           image: ghcr.io/dsmaugy/kubernetes-herodotus/herodotus-endpoint:latest
+---
+# expose the endpoint as service so we can interface with it through local HTTP requests
+apiVersion: v1
+kind: Service
+metadata:
+  name: herodotus-endpoint
+  namespace: kube-system
+  labels:
+    component: scheduler
+spec:
+  type: NodePort
+  ports:
+  - port: 8000
+    protocol: TCP
+  selector:
+    component: scheduler
+    app: scheduler-endpoint
