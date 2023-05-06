@@ -15,7 +15,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build scheduler
-      run: . build/run.sh make kube-scheduler  
+      run: build/run.sh make kube-scheduler  
       working-directory: ./kubernetes_src
     - name: Login to container registry
       run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
