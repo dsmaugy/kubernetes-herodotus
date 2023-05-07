@@ -65,8 +65,11 @@ def display_node_data(node_name: str, data: Dict):
 def display_pod_data(pod_name: str, namespace: str, data: Dict):
     print(data)
     print(data.keys())
+    print(data['filter_status'][pod_name].keys())
 
+    nodes = data['filter_status'][pod_name].keys()
     print(f"Pod: {pod_name}")
+
 
 def cli(options: argparse.Namespace):
     port = get_endpoint_port()

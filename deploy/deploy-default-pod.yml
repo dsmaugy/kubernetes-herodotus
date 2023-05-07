@@ -1,9 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: annotation-default-scheduler
-  labels:
-    name: multischeduler-example
+  name: test-pod-1
   
 spec:
   schedulerName: herodotus-scheduler
