@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3
+#!/usr/bin/python3
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
@@ -12,9 +12,6 @@ import json
 import logging
 
 requests.packages.urllib3.disable_warnings() # type: ignore
-
-OPTION_NODE = "node"
-OPTION_POD = "pod"
 
 # TODO: prod implementation would probably take these values from helm chart instead of hard coding
 SCHED_ADDR_ENV = "HERODOTUS_SCHEDULER_SERVICE_HOST"
@@ -145,8 +142,7 @@ class HerodotusEndpoint(BaseHTTPRequestHandler):
         query_comp = parse_qs(parse.query)
       
         if 'name' not in query_comp.keys():
-            self._send_header(400)
-            self._send_text("Empty name in query")
+            self.send_error(400, "Empty name in query")
             return
         
         try:
@@ -166,10 +162,10 @@ class HerodotusEndpoint(BaseHTTPRequestHandler):
                 self._send_text(json.dumps(out))
             else:
                 if out == NOT_FOUND_ERROR:
-                    self._send_header(404, type="text/plain")
+                    self.send_error(404, err)
                 else:
-                    self._send_header(400, type="text/plain")
-                self._send_text(err)
+                    self.send_error(400, err)
+            
         elif parse.path.lower() == "/pod":
             if 'namespace' not in query_comp.keys():
                 self._send_header(400, type="text/plain")
@@ -182,27 +178,14 @@ class HerodotusEndpoint(BaseHTTPRequestHandler):
                 self._send_text(json.dumps(out))
             else:
                 if out == NOT_FOUND_ERROR:
-                    self._send_header(404, type="text/plain")
+                    self.send_error(404, err)
                 else:
-                    self._send_header(400, type="text/plain")
-                self._send_text(err)   
+                    self.send_error(400, err)
         else:
-            self._send_header(400, type="text/plain")
-            self._send_text("Bad text")
+            self.send_error(404, "Bad Text")
 
 
 if __name__ == "__main__":
-    # parser = argparse.ArgumentParser(
-    #     prog="HerodotusEndpoint",
-    #     description="Tool to view data from Herodotus scheduler"
-    # )
-
-    # parser.add_argument('type', choices=[OPTION_NODE, OPTION_POD], help="Choose whether to query data against a pod or a node")
-    # parser.add_argument('name', help="Name of the pod or node to query against")
-    # parser.add_argument('-n', '--namespace', required=False, default="default", help="Namespace of the pod if querying against pods")
-    
-    # cli(parser.parse_args())
-
     # TODO: kubectl logs --follow makes it so it's impossible to quit
     addr = ('', 8000)
     httpd = HTTPServer(addr, HerodotusEndpoint)

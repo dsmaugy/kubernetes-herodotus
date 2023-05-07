@@ -1,0 +1,94 @@
+#!/usr/bin/python3
+
+import argparse
+import json
+import re
+import shutil
+import subprocess
+import sys
+
+from typing import Dict
+from urllib.error import HTTPError
+from urllib.request import urlopen
+
+
+OPTION_NODE = "node"
+OPTION_POD = "pod"
+
+# hardcoded from scheduler binary
+PLUGIN_FAILED = 0
+PLUGIN_PASSED = 1
+PLUGIN_SKIPPED = 2
+
+# for making output look nice and aligned
+TEXT_BUFFER = 5
+
+def err(msg: str):
+    print(msg, file=sys.stderr)
+    exit(-1)
+
+def get_endpoint_port() -> int:
+    kubectl_cmd = f"{shutil.which('kubectl')} get service herodotus-endpoint -n kube-system"
+    kubectl_get = subprocess.run(kubectl_cmd.split(), capture_output=True).stdout.decode()
+    port_search = re.search(r'8000:(\d+)/TCP', kubectl_get)
+    
+    if not port_search:
+        err("Failed to get herodotus-endpoint port. Is the service running on the cluster?")
+
+    return int(port_search.group(1))
+
+def get_data_from_endpoint(request_url: str) -> Dict:
+    try: 
+        r = urlopen(request_url)
+        return json.loads(r.read().decode())
+    except HTTPError as e:
+        err(f"Error contacting endpoint -> Received HTTP code {e.code}: {e.reason}")
+    
+
+def display_node_data(node_name: str, data: Dict):
+
+    print(f"Node: {node_name}:")
+    print("\tNode Scores:")
+    print(f"\t\tTotal Accumulated Score: {data['node_score_total']}")
+    print(f"\t\tTotal Score Attempts:    {data['node_score_attempts']}\n")
+
+    node_filter_pass_pcts = {filterName: round(passNum/data['node_filter_attempts'][filterName]*100) for filterName, passNum in data['node_filter_pass'].items()}
+    longest_filter_length = max(map(lambda x: len(x), data['node_filter_attempts'].keys()))
+    
+    print("\tNode Filter Pass Rate:")
+
+    # sort by percentage by alphabet
+    for filterName, pct in sorted(node_filter_pass_pcts.items(), key=lambda x: (x[1], x[0])):
+        num_buffer_spaces = longest_filter_length-len(filterName) + TEXT_BUFFER
+        print(f"\t\t{filterName}:{' '*num_buffer_spaces}{data['node_filter_pass'][filterName]}/{data['node_filter_attempts'][filterName]} ({pct}%)")
+
+def display_pod_data(pod_name: str, namespace: str, data: Dict):
+    print(data)
+    print(data.keys())
+
+    print(f"Pod: {pod_name}")
+
+def cli(options: argparse.Namespace):
+    port = get_endpoint_port()
+    base_endpoint_url = f"http://localhost:{port}/"
+
+    if options.type == OPTION_NODE:
+        data = get_data_from_endpoint(base_endpoint_url + f"node?name={options.name}")
+        display_node_data(options.name, data)
+    elif options.type == OPTION_POD:
+        data = get_data_from_endpoint(base_endpoint_url + f"pod?name={options.name}&namespace={options.namespace}")
+        display_pod_data(options.name, options.namespace, data)
+    
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        prog="HerodotusEndpoint",
+        description="Tool to view data from Herodotus scheduler"
+    )
+
+    parser.add_argument('type', choices=[OPTION_NODE, OPTION_POD], help="Choose whether to query data against a pod or a node")
+    parser.add_argument('name', help="Name of the pod or node to query against")
+    parser.add_argument('-n', '--namespace', required=False, default="default", help="Namespace of the pod if querying against pods")
+    
+    cli(parser.parse_args())

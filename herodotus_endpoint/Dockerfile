@@ -4,7 +4,7 @@ LABEL org.opencontainers.image.source=https://github.com/dsmaugy/kubernetes-hero
 
 RUN ["pip3", "install", "requests", "termcolor"]
 
-COPY endpoint.py /usr/local/bin/endpoint
-RUN ["chmod", "+x", "/usr/local/bin/endpoint"]
+COPY endpoint.py /usr/local/bin/endpoint.py
+RUN ["chmod", "+x", "/usr/local/bin/endpoint.py"]
 
-CMD ["endpoint"]
+CMD ["python3", "/usr/local/bin/endpoint.py"]
