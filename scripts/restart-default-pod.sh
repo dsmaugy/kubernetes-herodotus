@@ -2,6 +2,6 @@
 
 SCRIPT_DIR=$( dirname -- "$0")
 
-kubectl delete pod annotation-default-scheduler
+kubectl delete pod test-pod-1
 
-kubectl apply -f $SCRIPT_DIR/../deploy/deploy-default-pod.yml
+kubectl apply -f $SCRIPT_DIR/../deploy/test/deploy-default-pod.yml

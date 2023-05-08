@@ -19,6 +19,7 @@ TODO: fill this out ;)
 ## Edge Cases:
 - Choosing a node when only one option is available
 - Choosing a nominated node from preemption
+- Specifying specific node name skips scheduler: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodename
 
 ## K8s Source Files Modified:
 - kubernetes_src/pkg/scheduler/framework/types.go

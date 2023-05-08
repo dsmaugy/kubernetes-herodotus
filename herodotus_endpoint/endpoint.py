@@ -65,7 +65,8 @@ class HerodotusEndpoint(BaseHTTPRequestHandler):
         return f"kubernetes.io/herodotus-scheduler/{namespace}/{pod}"
 
     def _handle_node_request(self, request: requests.Response, node_name: str) -> Tuple[Union[dict, int], Union[str, None]]:
-        node_filter_pass = node_filter_attempts = dict()
+        node_filter_pass = dict()
+        node_filter_attempts = dict()
         node_score_total = node_score_attempts = 0
 
         logging.info(f"Processing NODE request for node: {node_name}")
@@ -109,15 +110,15 @@ class HerodotusEndpoint(BaseHTTPRequestHandler):
         }, None
     
     def _handle_pod_request(self, request: requests.Response, pod_name: str, namespace: str) -> Tuple[Union[dict, int], Union[str, None]]:
-        pod_filter_scores = pod_filter_status = defaultdict(lambda: defaultdict(dict))
-        found_pod = False
+        pod_filter_scores = defaultdict(lambda: defaultdict(dict))
+        pod_filter_status = defaultdict(lambda: defaultdict(dict))
+        found_pod_scores = found_pod_status = skipped_scoring = False
         for line in request.text.splitlines():
             if line.startswith(NODE_SCORE_PER_POD_PREFIX):
                 print(line)
                 search = re.search(NODE_SCORE_PER_POD_RE.format(namespace=namespace, pod_name=pod_name), line)
                 if search:
-                    # arbitarily use pod score per filter to mark whether a pod has been found but any should work
-                    found_pod = True 
+                    found_pod_scores = True 
 
                     pod_filter_scores[pod_name][search.group(1)][search.group(2)] = float(search.group(3))
             elif line.startswith(NODE_FILTER_STATUS_PREFIX):
@@ -125,13 +126,17 @@ class HerodotusEndpoint(BaseHTTPRequestHandler):
                 search = re.search(NODE_FILTER_STATUS_PER_POD_RE.format(namespace=namespace, pod_name=pod_name), line)
                 if search:
                     pod_filter_status[pod_name][search.group(1)][search.group(2)] = int(search.group(3))
+                    found_pod_status = True
         
-        if not found_pod:
+        if not found_pod_scores and not found_pod_status:
             return NOT_FOUND_ERROR, f"No pod found with name {pod_name} under namespace {namespace}"
+        elif not found_pod_scores and found_pod_status:
+            skipped_scoring = True
         
         return {
             "filter_scores": pod_filter_scores,
             "filter_status": pod_filter_status,
+            "skipped_scoring": skipped_scoring,
         }, None
     
     def do_GET(self):

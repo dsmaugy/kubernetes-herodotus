@@ -63,12 +63,101 @@ def display_node_data(node_name: str, data: Dict):
         print(f"\t\t{filterName}:{' '*num_buffer_spaces}{data['node_filter_pass'][filterName]}/{data['node_filter_attempts'][filterName]} ({pct}%)")
 
 def display_pod_data(pod_name: str, namespace: str, data: Dict):
-    print(data)
-    print(data.keys())
-    print(data['filter_status'][pod_name].keys())
-
-    nodes = data['filter_status'][pod_name].keys()
+    nodes = sorted(data['filter_status'][pod_name].keys())
     print(f"Pod: {pod_name}")
+
+    longest_score_filter_length = None
+
+    all_filters_passed = set()
+    choosen_node = None
+
+    print("\tNode Filter Statuses:")
+    for node in nodes:
+        print(f"\t\tNode: {node}")
+        failed_filters = []
+        skipped_filters = []
+        passed_filters = []
+
+        for filter_name, filter_status in sorted(data['filter_status'][pod_name][node].items(), key=lambda x: x[0]):
+            if filter_status == PLUGIN_FAILED:
+                failed_filters.append(filter_name)
+            elif filter_status == PLUGIN_SKIPPED:
+                skipped_filters.append(filter_name)
+            elif filter_status == PLUGIN_PASSED:
+                passed_filters.append(filter_name)
+
+        if len(failed_filters) == 0 and len(skipped_filters) == 0:
+            print(f"\t\t\t...all filters passed!")
+            all_filters_passed.add(node)
+        else:
+            print("\t\t\tFailed Filters:")
+            if len(failed_filters) > 0:
+                for failed_name in sorted(failed_filters):
+                    print(f"\t\t\t\t- {failed_name}")
+            else:
+                print("\t\t\t\tNo filters failed!")
+
+            print("\n\t\t\tSkipped Filters:")
+            if len(skipped_filters) > 0:
+                for skipped_filter in sorted(skipped_filters):
+                    print(f"\t\t\t\t- {skipped_filter}")
+            else:
+                print("\t\t\t\tNo filters skipped!")
+
+            print("\n\t\t\tPassed Filters:")
+            if len(passed_filters) > 0:
+                for passed_filter in sorted(passed_filters):
+                    print(f"\t\t\t\t- {passed_filter}")
+            else:
+                print("\t\t\t\tNo filters passed!")
+        print()
+
+    print("\tNode Scoring Filters:")
+    max_node_score = 0
+    max_node = None
+    choosen_reason = None
+    for node in nodes:
+        print(f"\t\tNode: {node}")
+        if data['skipped_scoring']:
+            # only one node eligible
+            if node in all_filters_passed:
+                print("\t\t\tscoring skipped... node choosen")
+                choosen_node = node
+                choosen_reason = "Only Valid Node"
+            else:
+                print("\t\t\tscoring skipped... node NOT choosen")
+        else:
+            # nodes should have scores
+
+            # get the longest scoring filter for proper text displacement
+            if longest_score_filter_length is None:
+                longest_score_filter_length = max(map(lambda x: len(x), data['filter_scores'][pod_name][node].keys()))
+
+            total_score = 0
+            longest_score_chars = 0
+            for filter_name, filter_score in sorted(data['filter_scores'][pod_name][node].items(), key=lambda x: x[0]):
+                num_buffer_spaces = longest_score_filter_length-len(filter_name) + TEXT_BUFFER
+                print(f"\t\t\t- {filter_name}:{' '*num_buffer_spaces}{filter_score}")
+                total_score += filter_score
+                longest_score_chars = max(longest_score_chars, len(str(filter_score)))
+
+            if total_score > max_node_score:
+                max_node = node
+                max_node_score = total_score
+                choosen_reason = "Highest Score"
+
+            print(f"\t\t{'-'*(longest_score_filter_length + TEXT_BUFFER + longest_score_chars + 16)}")
+            print("\t\tTotal:" + " "*(longest_score_filter_length + 10) + f"{total_score}")
+
+        print()
+
+    if choosen_node is None:
+        choosen_node = max_node
+
+    print(f"\n\tPlaced node: {choosen_node}")
+    print(f"\tReason:      {choosen_reason}")
+
+            
 
 
 def cli(options: argparse.Namespace):

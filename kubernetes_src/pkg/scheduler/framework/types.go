@@ -929,7 +929,8 @@ func (h HostPortInfo) sanitize(ip, protocol *string) {
 }
 
 // Herodotus Scheduler info
-
+// TODO: move some functions to new file?
+// TODO: init the metrics at scheduler boot so we have values for nodes
 type PluginStatus int
 
 var HerodotusPodStatsKey = "kubernetes.io/herodotus-scheduler/"
