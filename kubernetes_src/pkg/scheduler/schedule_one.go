@@ -697,6 +697,7 @@ func prioritizeNodes(
 		klog.V(3).Infof("Setting metrics for node %s", nodeScore.Name)
 		for _, pluginScore := range nodeScore.Scores {
 			metrics.NodeNormalizedScore.WithLabelValues(nodeScore.Name, string(framework.GetHerodotusPodKey(pod)), pluginScore.Name).Set(float64(pluginScore.Score))
+			metrics.NodeScoreByPluginTotal.WithLabelValues(nodeScore.Name, string(framework.GetHerodotusPodKey(pod)), pluginScore.Name).Add(float64(pluginScore.Score))
 		}
 		metrics.NodeNormalizedScoreTotal.WithLabelValues(nodeScore.Name).Add(float64(nodeScore.TotalScore))
 		metrics.NodeScoreAttempts.WithLabelValues(nodeScore.Name).Inc()

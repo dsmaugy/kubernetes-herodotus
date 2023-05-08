@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: large-deploy
+  labels:
+    demo: deploy
+spec:
+  replicas: 30
+  selector:
+    matchLabels:
+      app: deploy
+  template:
+    metadata:
+      labels:
+        app: deploy
+    spec:
+      schedulerName: herodotus-scheduler
+      containers:
+      - name: nginx
+        image: registry.k8s.io/pause:2.0

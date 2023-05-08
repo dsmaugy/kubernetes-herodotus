@@ -127,27 +127,31 @@ def display_pod_data(pod_name: str, namespace: str, data: Dict):
             else:
                 print("\t\t\tscoring skipped... node NOT choosen")
         else:
-            # nodes should have scores
+            # there exists multiple eligible nodes that have scores
 
-            # get the longest scoring filter for proper text displacement
-            if longest_score_filter_length is None:
-                longest_score_filter_length = max(map(lambda x: len(x), data['filter_scores'][pod_name][node].keys()))
+            if node in data['filter_scores'][pod_name].keys():
+                # get the longest scoring filter for proper text displacement
+                if longest_score_filter_length is None:
+                    longest_score_filter_length = max(map(lambda x: len(x), data['filter_scores'][pod_name][node].keys()))
 
-            total_score = 0
-            longest_score_chars = 0
-            for filter_name, filter_score in sorted(data['filter_scores'][pod_name][node].items(), key=lambda x: x[0]):
-                num_buffer_spaces = longest_score_filter_length-len(filter_name) + TEXT_BUFFER
-                print(f"\t\t\t- {filter_name}:{' '*num_buffer_spaces}{filter_score}")
-                total_score += filter_score
-                longest_score_chars = max(longest_score_chars, len(str(filter_score)))
+                total_score = 0
+                longest_score_chars = 0
+                for filter_name, filter_score in sorted(data['filter_scores'][pod_name][node].items(), key=lambda x: x[0]):
+                    num_buffer_spaces = longest_score_filter_length-len(filter_name) + TEXT_BUFFER
+                    print(f"\t\t\t- {filter_name}:{' '*num_buffer_spaces}{filter_score}")
+                    total_score += filter_score
+                    longest_score_chars = max(longest_score_chars, len(str(filter_score)))
 
-            if total_score > max_node_score:
-                max_node = node
-                max_node_score = total_score
-                choosen_reason = "Highest Score"
+                if total_score > max_node_score:
+                    max_node = node
+                    max_node_score = total_score
+                    choosen_reason = "Highest Score"
 
-            print(f"\t\t{'-'*(longest_score_filter_length + TEXT_BUFFER + longest_score_chars + 16)}")
-            print("\t\tTotal:" + " "*(longest_score_filter_length + 10) + f"{total_score}")
+                print(f"\t\t{'-'*(longest_score_filter_length + TEXT_BUFFER + longest_score_chars + 16)}")
+                print("\t\tTotal:" + " "*(longest_score_filter_length + 10) + f"{total_score}")
+            else:
+                # this particular node scoring was skipped
+                print("\t\t\t- Scoring skipped because one or more filter(s) failed")
 
         print()
 

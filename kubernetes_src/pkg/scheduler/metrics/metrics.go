@@ -237,6 +237,14 @@ var (
 			StabilityLevel: metrics.ALPHA,
 		}, []string{"node", "plugin"})
 
+	NodeScoreByPluginTotal = metrics.NewCounterVec(
+		&metrics.CounterOpts{
+			Subsystem:      SchedulerSubsystem,
+			Name:           "node_score_by_plugin_total",
+			Help:           "The total score a scoring plugin has accumulated on a node",
+			StabilityLevel: metrics.ALPHA,
+		}, []string{"node", "pod", "plugin"})
+
 	metricsList = []metrics.Registerable{
 		scheduleAttempts,
 		e2eSchedulingLatency,
@@ -261,6 +269,7 @@ var (
 		NodeFilterStatus,
 		NodeFilterPasses,
 		NodeFilterAttempts,
+		NodeScoreByPluginTotal,
 	}
 )
 
