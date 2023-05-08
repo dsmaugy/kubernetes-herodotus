@@ -48,14 +48,27 @@ def get_data_from_endpoint(request_url: str) -> Dict:
 def display_node_data(node_name: str, data: Dict):
 
     print(f"Node: {node_name}:")
-    print("\tNode Scores:")
-    print(f"\t\tTotal Accumulated Score: {data['node_score_total']}")
-    print(f"\t\tTotal Score Attempts:    {data['node_score_attempts']}\n")
+
+    print("\tNode Eligibility:")
+    print(f"\t\tEligibility Rate: {data['node_eligible_num']}/{data['node_eligible_check_num']} ({round(data['node_eligible_num']/data['node_eligible_check_num']*100)}%)")
+
+    print("\n\tNode Scores:")
+    print(f"\t\tTotal Accumulated Score:             {data['node_score_total']}")
+    print(f"\t\tTotal Score Attempts:                {data['node_score_attempts']}")
+    print(f"\t\tAverage Score per Schedule Cycle:    {round(data['node_score_total']/data['node_score_attempts'])}\n")
 
     node_filter_pass_pcts = {filterName: round(passNum/data['node_filter_attempts'][filterName]*100) for filterName, passNum in data['node_filter_pass'].items()}
     longest_filter_length = max(map(lambda x: len(x), data['node_filter_attempts'].keys()))
+    longest_plugin_length = max(map(lambda x: len(x), data['node_score_plugin_total'].keys()))
+
+    print(f"\n\t\tPlugin Breakdown:")
+
+    # sort only by alphabet
+    for plugin_name, plugin_score in sorted(data['node_score_plugin_total'].items(), key=lambda x: x[0]):
+        num_buffer_spaces = longest_plugin_length-len(plugin_name) + TEXT_BUFFER
+        print(f"\t\t\t{plugin_name}:{' '*num_buffer_spaces}{plugin_score}")
     
-    print("\tNode Filter Pass Rate:")
+    print("\n\tNode Filter Pass Rate:")
 
     # sort by percentage by alphabet
     for filterName, pct in sorted(node_filter_pass_pcts.items(), key=lambda x: (x[1], x[0])):

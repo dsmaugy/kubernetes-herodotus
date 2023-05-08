@@ -17,12 +17,16 @@ requests.packages.urllib3.disable_warnings() # type: ignore
 SCHED_ADDR_ENV = "HERODOTUS_SCHEDULER_SERVICE_HOST"
 SCHED_PORT_ENV = "HERODOTUS_SCHEDULER_SERVICE_PORT"
 
-NODE_SCORE_PER_POD_PREFIX = "scheduler_normalized_node_score_for_pod"
+NODE_SCORE_PER_POD_PREFIX = 'scheduler_normalized_node_score_for_pod'
+NODE_SCORE_PER_PLUGIN_TOTAL_PREFIX = 'scheduler_node_score_by_plugin_total{{node="{node_name}"'
 NODE_SCORE_ATTEMPTS_PREFIX = 'scheduler_node_score_attempts{{node="{node_name}"'
 NODE_SCORE_TOTAL_PREFIX = 'scheduler_normalized_node_score_total{{node="{node_name}"'
 NODE_FILTER_STATUS_PREFIX = "scheduler_node_filter_status"
 NODE_FILTER_PASS_PREFIX = 'scheduler_node_filter_pass{{node="{node_name}"'
 NODE_FILTER_ATTEMPTS_PREFIX = 'scheduler_node_filter_attempts{{node="{node_name}"'
+NODE_ELIGIBLE_PREFIX = 'scheduler_node_eligible_num{{node="{node_name}"'
+NODE_ELIGIBLE_CHECK_PREFIX = 'scheduler_node_eligible_check_num{{node="{node_name}"'
+
 
 NODE_FILTER_PASS_RE = r'plugin="([^"]+)"} (\d+)'
 NODE_FILTER_ATTEMPTS_RE = r'plugin="([^"]+)"} (\d+)'
@@ -30,6 +34,9 @@ NODE_SCORE_ATTEMPTS_RE = r'node="[^"]+"} (\d+)'
 NODE_SCORE_TOTAL_RE = r'node="[^"]+"} (\d+)'
 NODE_SCORE_PER_POD_RE = r'node="([^"]+)",plugin="([^"]+)",' + 'pod="kubernetes.io/herodotus-scheduler/{namespace}/{pod_name}"}}' + r' (\d+)'
 NODE_FILTER_STATUS_PER_POD_RE = r'node="([^"]+)",plugin="([^"]+)",' + 'pod="kubernetes.io/herodotus-scheduler/{namespace}/{pod_name}"}}' + r' (\d+)'
+NODE_SCORE_PER_PLUGIN_TOTAL_RE = r'node="[^"]+",plugin="([^"]+)"} (\d+)'
+NODE_ELIGIBLE_RE = r'node="[^"]+"} (\d+)'
+NODE_ELIGIBLE_CHECK_RE = r'node="[^"]+"} (\d+)'
 
 NOT_FOUND_ERROR = 0
 REGEX_ERROR_ERROR = 1
@@ -40,15 +47,9 @@ REGEX_ERROR_ERROR = 1
 # scheduler_node_score_attempts{node="darwin-main"} 1
 # scheduler_node_filter_pass{node="darwin-main",plugin="VolumeBinding"} 1
 # scheduler_node_filter_attempts{node="microk8s-node-2",plugin="GCEPDLimits"} 1
+# node_score_by_plugin_total{node=, plugin=} XX
 
-# TODO: specific pods require namespace
-# cprint(f"{options.name}:\n", attrs=["underline"])
-# cprint("\tNode Scores:", color="cyan", attrs=["bold"])
-# print(f"\t\t{colored('Total Accumulated Score', color='green')}: {node_score_total}")
-# print(f"\t\t{colored('Total Score Attempts', color='green')}: {node_score_attempts}\n")
-# cprint("\tNode Filter Pass Rate:", color="cyan", attrs=["bold"])
-# for filterPlugin, val in node_filter_attempts.items:
-#     print(f"\t\t\t\t{colored(f'{filterPlugin}', color='green')}: {val}")
+
             
 
 class HerodotusEndpoint(BaseHTTPRequestHandler):
@@ -67,7 +68,8 @@ class HerodotusEndpoint(BaseHTTPRequestHandler):
     def _handle_node_request(self, request: requests.Response, node_name: str) -> Tuple[Union[dict, int], Union[str, None]]:
         node_filter_pass = dict()
         node_filter_attempts = dict()
-        node_score_total = node_score_attempts = 0
+        node_score_plugin_totals = dict()
+        node_score_total = node_score_attempts = node_eligible_num = node_eligible_check_num = -1  # sentinel debug value
 
         logging.info(f"Processing NODE request for node: {node_name}")
         found_node = False
@@ -90,6 +92,24 @@ class HerodotusEndpoint(BaseHTTPRequestHandler):
                     return REGEX_ERROR_ERROR, f"Error matching {line} with pattern {NODE_SCORE_ATTEMPTS_RE}"
                 
                 node_score_attempts = int(search.group(1))
+            elif line.startswith(NODE_SCORE_PER_PLUGIN_TOTAL_PREFIX.format(node_name=node_name)):
+                search = re.search(NODE_SCORE_PER_PLUGIN_TOTAL_RE, line)
+                if search is None:
+                    return REGEX_ERROR_ERROR, f"Error matching {line} with pattern {NODE_SCORE_PER_PLUGIN_TOTAL_RE}"
+                
+                node_score_plugin_totals[search.group(1)] = search.group(2)
+            elif line.startswith(NODE_ELIGIBLE_PREFIX.format(node_name=node_name)):
+                search = re.search(NODE_ELIGIBLE_RE, line)
+                if search is None:
+                    return REGEX_ERROR_ERROR, f"Error matching {line} with pattern {NODE_ELIGIBLE_RE}"
+                
+                node_eligible_num = int(search.group(1))
+            elif line.startswith(NODE_ELIGIBLE_CHECK_PREFIX.format(node_name=node_name)):
+                search = re.search(NODE_ELIGIBLE_CHECK_RE, line)
+                if search is None:
+                    return REGEX_ERROR_ERROR, f"Error matching {line} with pattern {NODE_ELIGIBLE_CHECK_RE}"
+                
+                node_eligible_check_num = int(search.group(1))
             elif line.startswith(NODE_SCORE_TOTAL_PREFIX.format(node_name=node_name)):
                 search = re.search(NODE_SCORE_TOTAL_RE, line)
                 if search is None:
@@ -99,14 +119,19 @@ class HerodotusEndpoint(BaseHTTPRequestHandler):
                 found_node = True 
                 node_score_total = int(search.group(1))
 
+            # TODO: handle node_score_by_plugin_total
+
         if not found_node:
             return NOT_FOUND_ERROR, f"No node found with name {node_name}"
 
         return {
             'node_score_total': node_score_total,
             'node_score_attempts': node_score_attempts,
+            'node_score_plugin_total': node_score_plugin_totals,
             'node_filter_pass': node_filter_pass,
             'node_filter_attempts': node_filter_attempts,
+            'node_eligible_num': node_eligible_num,
+            'node_eligible_check_num': node_eligible_check_num,
         }, None
     
     def _handle_pod_request(self, request: requests.Response, pod_name: str, namespace: str) -> Tuple[Union[dict, int], Union[str, None]]:

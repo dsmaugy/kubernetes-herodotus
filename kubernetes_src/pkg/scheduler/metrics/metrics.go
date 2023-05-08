@@ -243,7 +243,23 @@ var (
 			Name:           "node_score_by_plugin_total",
 			Help:           "The total score a scoring plugin has accumulated on a node",
 			StabilityLevel: metrics.ALPHA,
-		}, []string{"node", "pod", "plugin"})
+		}, []string{"node", "plugin"})
+
+	NodeEligibleNum = metrics.NewCounterVec(
+		&metrics.CounterOpts{
+			Subsystem:      SchedulerSubsystem,
+			Name:           "node_eligible_num",
+			Help:           "The number of times the node passed all filtering plugins",
+			StabilityLevel: metrics.ALPHA,
+		}, []string{"node"})
+
+	NodeEligilibtyCheckNum = metrics.NewCounterVec(
+		&metrics.CounterOpts{
+			Subsystem:      SchedulerSubsystem,
+			Name:           "node_eligible_check_num",
+			Help:           "The number of times the node has been checked for eligibility",
+			StabilityLevel: metrics.ALPHA,
+		}, []string{"node"})
 
 	metricsList = []metrics.Registerable{
 		scheduleAttempts,
@@ -270,6 +286,8 @@ var (
 		NodeFilterPasses,
 		NodeFilterAttempts,
 		NodeScoreByPluginTotal,
+		NodeEligibleNum,
+		NodeEligilibtyCheckNum,
 	}
 )
 

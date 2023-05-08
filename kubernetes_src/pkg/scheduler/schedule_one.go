@@ -514,11 +514,15 @@ func (sched *Scheduler) findNodesThatPassFilters(
 		// this is to make sure all nodes have the same chance of being examined across pods.
 		nodeInfo := nodes[(sched.nextStartNodeIndex+i)%numAllNodes]
 		status := fwk.RunFilterPluginsWithNominatedPods(ctx, state, pod, nodeInfo)
+
+		klog.V(3).InfoS("IM IN THE CHECK NODE")
+		metrics.NodeEligilibtyCheckNum.WithLabelValues(nodeInfo.Node().Name).Inc()
 		if status.Code() == framework.Error {
 			errCh.SendErrorWithCancel(status.AsError(), cancel)
 			return
 		}
 		if status.IsSuccess() {
+			metrics.NodeEligibleNum.WithLabelValues(nodeInfo.Node().Name).Inc()
 			length := atomic.AddInt32(&feasibleNodesLen, 1)
 			if length > numNodesToFind {
 				cancel()
@@ -697,7 +701,7 @@ func prioritizeNodes(
 		klog.V(3).Infof("Setting metrics for node %s", nodeScore.Name)
 		for _, pluginScore := range nodeScore.Scores {
 			metrics.NodeNormalizedScore.WithLabelValues(nodeScore.Name, string(framework.GetHerodotusPodKey(pod)), pluginScore.Name).Set(float64(pluginScore.Score))
-			metrics.NodeScoreByPluginTotal.WithLabelValues(nodeScore.Name, string(framework.GetHerodotusPodKey(pod)), pluginScore.Name).Add(float64(pluginScore.Score))
+			metrics.NodeScoreByPluginTotal.WithLabelValues(nodeScore.Name, pluginScore.Name).Add(float64(pluginScore.Score))
 		}
 		metrics.NodeNormalizedScoreTotal.WithLabelValues(nodeScore.Name).Add(float64(nodeScore.TotalScore))
 		metrics.NodeScoreAttempts.WithLabelValues(nodeScore.Name).Inc()
