@@ -5,7 +5,7 @@ metadata:
   labels:
     demo: deploy
 spec:
-  replicas: 30
+  replicas: 50
   selector:
     matchLabels:
       app: deploy
@@ -15,6 +15,16 @@ spec:
         app: deploy
     spec:
       schedulerName: herodotus-scheduler
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: cpsc426-label
+                operator: In
+                values:
+                - micro
       containers:
       - name: nginx
         image: registry.k8s.io/pause:2.0

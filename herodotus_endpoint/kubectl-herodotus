@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 from typing import Dict
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
 
@@ -43,6 +43,8 @@ def get_data_from_endpoint(request_url: str) -> Dict:
         return json.loads(r.read().decode())
     except HTTPError as e:
         err(f"Error contacting endpoint -> Received HTTP code {e.code}: {e.reason}")
+    except Exception as e:
+        err(f"Error contacting endpoint -> {e}")
     
 
 def display_node_data(node_name: str, data: Dict):
