@@ -928,6 +928,10 @@ func (h HostPortInfo) sanitize(ip, protocol *string) {
 	}
 }
 
+/*
+	BEGIN HERODOTUS SECTION
+*/
+
 // Herodotus Scheduler info
 // TODO: move some functions to new file?
 // TODO: init the metrics at scheduler boot so we have values for nodes
@@ -998,3 +1002,7 @@ func NewHerodotusPodStats(nodes []*NodeInfo) *HerodotusPodStats {
 
 	return stat
 }
+
+/*
+	END HERODOTUS SECTION
+*/

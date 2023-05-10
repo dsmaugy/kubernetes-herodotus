@@ -727,6 +727,9 @@ func (f *frameworkImpl) RunFilterPlugins(
 	pod *v1.Pod,
 	nodeInfo *framework.NodeInfo,
 ) framework.PluginToStatus {
+	/*
+		BEGIN HERODOTUS SECTION
+	*/
 	var heroPodStats *framework.HerodotusPodStats
 
 	statuses := make(framework.PluginToStatus)
@@ -748,6 +751,10 @@ func (f *frameworkImpl) RunFilterPlugins(
 		}
 	}
 
+	/*
+		END HERODOTUS SECTION
+	*/
+
 	for _, pl := range f.filterPlugins {
 		pluginStatus := f.runFilterPlugin(ctx, pl, state, pod, nodeInfo)
 		if !pluginStatus.IsSuccess() {
@@ -756,18 +763,31 @@ func (f *frameworkImpl) RunFilterPlugins(
 				// Success or Unschedulable.
 				pluginStatus = framework.AsStatus(fmt.Errorf("running %q filter plugin: %w", pl.Name(), pluginStatus.AsError()))
 			}
-
+			/*
+				BEGIN HERODOTUS SECTION
+			*/
 			if enableHerod {
 				heroPodStats.SetPluginStatus(nodeInfo.Node().Name, pl.Name(), false)
 			}
+
+			/*
+				END HERODOTUS SECTION
+			*/
 
 			pluginStatus.SetFailedPlugin(pl.Name())
 			return map[string]*framework.Status{pl.Name(): pluginStatus}
 		}
 
+		/*
+			BEGIN HERODOTUS SECTION
+		*/
 		if enableHerod {
 			heroPodStats.SetPluginStatus(nodeInfo.Node().Name, pl.Name(), true)
 		}
+
+		/*
+			END HERODOTUS SECTION
+		*/
 	}
 
 	return statuses

@@ -85,10 +85,16 @@ func (sched *Scheduler) scheduleOne(ctx context.Context) {
 	state := framework.NewCycleState()
 	state.SetRecordPluginMetrics(rand.Intn(100) < pluginMetricsSamplePercent)
 
+	/*
+		BEGIN HERODOTUS SECTION
+	*/
 	// Initialize an empty podsToActivate struct, which will be filled up by plugins or stay empty.
 	podsToActivate := framework.NewPodsToActivate()
 	state.Write(framework.PodsToActivateKey, podsToActivate)
 	klog.V(3).Infof("Herodotus Key Name: %s", framework.GetHerodotusPodKey(pod))
+	/*
+		END HERODOTUS SECTION
+	*/
 
 	schedulingCycleCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -505,9 +511,15 @@ func (sched *Scheduler) findNodesThatPassFilters(
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	/*
+		BEGIN HERODOTUS SECTION
+	*/
 	// populate the Herodotus state data
 	heroPodStats := framework.NewHerodotusPodStats(nodes)
 	state.Write(framework.GetHerodotusPodKey(pod), heroPodStats)
+	/*
+		END HERODOTUS SECTION
+	*/
 
 	checkNode := func(i int) {
 		// We check the nodes starting from where we left off in the previous scheduling cycle,
@@ -522,7 +534,13 @@ func (sched *Scheduler) findNodesThatPassFilters(
 			return
 		}
 		if status.IsSuccess() {
+			/*
+				BEGIN HERODOTUS SECTION
+			*/
 			metrics.NodeEligibleNum.WithLabelValues(nodeInfo.Node().Name).Inc()
+			/*
+				END HERODOTUS SECTION
+			*/
 			length := atomic.AddInt32(&feasibleNodesLen, 1)
 			if length > numNodesToFind {
 				cancel()
@@ -552,6 +570,9 @@ func (sched *Scheduler) findNodesThatPassFilters(
 	fwk.Parallelizer().Until(ctx, numAllNodes, checkNode, frameworkruntime.Filter)
 	feasibleNodes = feasibleNodes[:feasibleNodesLen]
 
+	/*
+		BEGIN HERODOTUS SECTION
+	*/
 	// update Herodotus stats for all nodes for this pod
 	for _, node := range nodes {
 		for _, pluginName := range heroPodStats.GetAllFilterNames() {
@@ -567,6 +588,10 @@ func (sched *Scheduler) findNodesThatPassFilters(
 			}
 		}
 	}
+
+	/*
+		END HERODOTUS SECTION
+	*/
 
 	if err := errCh.ReceiveError(); err != nil {
 		statusCode = framework.Error
@@ -696,6 +721,9 @@ func prioritizeNodes(
 		return nil, scoreStatus.AsError()
 	}
 
+	/*
+		BEGIN HERODOTUS SECTION
+	*/
 	// log scores into Herodotus
 	for _, nodeScore := range nodesScores {
 		klog.V(3).Infof("Setting metrics for node %s", nodeScore.Name)
@@ -706,6 +734,9 @@ func prioritizeNodes(
 		metrics.NodeNormalizedScoreTotal.WithLabelValues(nodeScore.Name).Add(float64(nodeScore.TotalScore))
 		metrics.NodeScoreAttempts.WithLabelValues(nodeScore.Name).Inc()
 	}
+	/*
+		END HERODOTUS SECTION
+	*/
 
 	// Additional details logged at level 10 if enabled.
 	klogV := klog.V(10)

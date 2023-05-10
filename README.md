@@ -26,13 +26,26 @@ To use this, you need the following:
 - `python3` (tested with >=3.8.13 but honestly any relatively modern Python3 should do)
 
 To build the custom scheduler binary, you also need `docker` with `buildx` (see [here](https://github.com/kubernetes/kubernetes/tree/v1.26.4/build#requirements))
-This is not required if you just want to test the program, as the built images are hosted on this public Github container registry.
+This is not required if you just want to test the program as the built images are hosted on this public Github container registry.
 
 ## Installation
-1. Run `install.sh` to add the `kubectl herodotus` plugin to PATH. Unless you manually add it to PATH, this moves it to `/usr/local/bin` which requires sudo access.
-2. Run `kubectl apply -f deploy/herodotus-scheduler.yml`. This will install all the required service accounts/permissions for the custom scheduler, the custom scheduler itself, the HTTP metric expose endpoint, and any required services to expose the program.
+1. Run `install.sh` to add the `kubectl herodotus` plugin to PATH. 
+    - This moves it to `/usr/local/bin` which requires sudo access.
+2. Run `kubectl apply -f deploy/herodotus-scheduler.yml`. 
+    - This will install all the required service accounts/permissions for the custom scheduler, the custom scheduler itself, the HTTP metrics endpoint, and the required services to expose the program.
+    - Container images are specified on line 105 and 159 respectively. These point to the Github container registry hosted on this repo. There is a Github Action that builds and pushes the images on every push to main. 
+    - There are scripts in `scripts/` that will automatically build and push `herodotus-scheduler` and `herodotus-endpoint`.
 
 ## Building
+All build steps are run from repo root directory.
+
+### Building herodotus-scheduler
+1. Run `kubernetes_src/build/run.sh make kube-scheduler`
+2. Run `docker build . --tag <YOUR_TAG>`
+
+### Building herodotus-endpoint
+1. Run `docker build herodotus_endpoint/ --tag <YOUR_TAG>`
+
 
 ## Usage
 
@@ -50,8 +63,10 @@ optional arguments:
   -n NAMESPACE, --namespace NAMESPACE
                         Namespace of the pod if querying against pods
 ```
+### Testing Example:
 
-## Edge Cases:
-- Choosing a node when only one option is available
-- Choosing a nominated node from preemption
-- Specifying specific node name skips scheduler: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodename
+1. Install Herodotus on the Kubernetes cluster
+2. Run `kubectl apply -f deploy/test/deploy-default-pod.yml`
+3. Run `kubectl herodotus pod test-pod-1`
+
+## Writeup

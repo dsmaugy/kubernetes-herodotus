@@ -189,6 +189,10 @@ var (
 			StabilityLevel: metrics.ALPHA,
 		}, []string{"plugin", "profile"})
 
+	/*
+		BEGIN HERODOTUS SECTION
+	*/
+
 	NodeNormalizedScoreTotal = metrics.NewGaugeVec(
 		&metrics.GaugeOpts{
 			Subsystem:      SchedulerSubsystem,
@@ -261,6 +265,10 @@ var (
 			StabilityLevel: metrics.ALPHA,
 		}, []string{"node"})
 
+	/*
+		END HERODOTUS SECTION
+	*/
+
 	metricsList = []metrics.Registerable{
 		scheduleAttempts,
 		e2eSchedulingLatency,
@@ -279,6 +287,10 @@ var (
 		PermitWaitDuration,
 		CacheSize,
 		unschedulableReasons,
+
+		/*
+			BEGIN HERODOTUS SECTION
+		*/
 		NodeNormalizedScore,
 		NodeNormalizedScoreTotal,
 		NodeScoreAttempts,
@@ -288,6 +300,9 @@ var (
 		NodeScoreByPluginTotal,
 		NodeEligibleNum,
 		NodeEligilibtyCheckNum,
+		/*
+			END HERODOTUS SECTION
+		*/
 	}
 )
 
