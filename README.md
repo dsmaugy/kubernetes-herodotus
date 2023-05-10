@@ -13,7 +13,7 @@ The Herodotus K8s Scheduler is a modified Kubernetes scheduler process that aims
 
 Here is a rather long but informative video showcasing usage of the Herodotus Scheduler:
 
-[gdrive link](https://drive.google.com/file/d/1QQv3CDFR4yaHnIMty8taYCT-4aLbXt0k/view?usp=sharing)
+[gdrive link](https://drive.google.com/file/d/1QQv3CDFR4yaHnIMty8taYCT-4aLbXt0k/view?usp=sharing) / [youtube link](https://www.youtube.com/watch?v=cthQR859AlA)
 
 **NOTE**: I use the words "filter" and "plugin" interchangeably a lot. 
 To clarify, a scoring filter/plugin is a K8s scheduler check that gives each node a score.
@@ -41,6 +41,8 @@ All build steps are run from repo root directory.
 
 ### Building herodotus-scheduler
 1. Run `kubernetes_src/build/run.sh make kube-scheduler`
+  - This outputs the `kube-scheduler` binary to `kubernetes_src/_output/dockerized/bin/...`
+  - (the .tar archive should already have a pre-built binary there!)
 2. Run `docker build . --tag <YOUR_TAG>`
 
 ### Building herodotus-endpoint
@@ -70,3 +72,5 @@ optional arguments:
 3. Run `kubectl herodotus pod test-pod-1`
 
 ## Writeup
+
+[Project Writeup](writeup.pdf)
